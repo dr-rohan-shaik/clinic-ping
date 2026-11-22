@@ -19,13 +19,20 @@ import { randomUUID } from 'crypto'
 import bcrypt from 'bcryptjs'
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://clinicping:password@localhost:5432/clinicping',
+  connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/clinicping',
 })
 
 const db = drizzle(pool)
 
+// Get seed password from env or use a secure default
+const SEED_PASSWORD = process.env.SEED_PASSWORD || 'demo12345'
+
 async function seed() {
   console.log('Seeding ClinicPing database with DEMO data...\n')
+
+  const now = new Date()
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
   // Create demo clinic
   const [clinic] = await db.insert(clinics).values({
@@ -38,7 +45,7 @@ async function seed() {
   console.log(`✓ Created clinic: ${clinic.name}`)
 
   // Create admin user
-  const passwordHash = await bcrypt.hash('demo12345', 10)
+  const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10)
   const [admin] = await db.insert(users).values({
     id: randomUUID(),
     clinicId: clinic.id,
@@ -127,31 +134,26 @@ async function seed() {
 
   console.log(`✓ Created patients: ${patient1.name}, ${patient2.name}, ${patient3.name}`)
 
-  // Create appointments
-  const now = new Date()
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  // Create appointments for cash entries reference
+  const [appointment1] = await db.insert(appointments).values({
+    id: randomUUID(),
+    clinicId: clinic.id,
+    patientId: patient1.id,
+    doctorId: doctor1.id,
+    startTime: tomorrow,
+    endTime: new Date(tomorrow.getTime() + 30 * 60 * 1000),
+    status: 'scheduled',
+  }).returning()
 
-  await db.insert(appointments).values([
-    {
-      id: randomUUID(),
-      clinicId: clinic.id,
-      patientId: patient1.id,
-      doctorId: doctor1.id,
-      startTime: tomorrow,
-      endTime: new Date(tomorrow.getTime() + 30 * 60 * 1000),
-      status: 'scheduled',
-    },
-    {
-      id: randomUUID(),
-      clinicId: clinic.id,
-      patientId: patient2.id,
-      doctorId: doctor2.id,
-      startTime: nextWeek,
-      endTime: new Date(nextWeek.getTime() + 30 * 60 * 1000),
-      status: 'confirmed',
-    },
-  ])
+  const [appointment2] = await db.insert(appointments).values({
+    id: randomUUID(),
+    clinicId: clinic.id,
+    patientId: patient2.id,
+    doctorId: doctor2.id,
+    startTime: nextWeek,
+    endTime: new Date(nextWeek.getTime() + 30 * 60 * 1000),
+    status: 'confirmed',
+  }).returning()
 
   console.log(`✓ Created appointments`)
 
@@ -163,8 +165,8 @@ async function seed() {
       type: 'inflow',
       amountPaise: 150000, // ₹1,500
       mode: 'cash',
-      category: 'consultation',
-      appointmentId: appointments.id[0],
+      category: 'other',
+      appointmentId: appointment1.id,
       createdBy: admin.id,
     },
     {
@@ -200,9 +202,7 @@ async function seed() {
   console.log(`✓ Created recall rules`)
 
   console.log('\n✅ Seed complete! Demo data ready.')
-  console.log('\n📋 Login credentials:')
-  console.log('   Email: admin@demo.clinic')
-  console.log('   Password: demo12345\n')
+  console.log('\n📋 Demo user created at: admin@demo.clinic')
 
   await pool.end()
 }

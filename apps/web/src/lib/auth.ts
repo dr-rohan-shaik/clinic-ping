@@ -1,9 +1,34 @@
-import { NextAuthOptions } from 'next-auth'
+import { NextAuthOptions, Session } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { db } from '@/lib/db'
 import { users, clinics } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
+
+// Extend the built-in session types
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id?: string
+      email?: string
+      name?: string | null
+      image?: string | null
+      role?: string
+      clinicId?: string
+      clinicName?: string
+    }
+  }
+}
+
+// User returned from authorize callback
+type AuthUser = {
+  id: string
+  email: string
+  name: string
+  role: string
+  clinicId: string
+  clinicName: string | undefined
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,7 +38,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<AuthUser | null> {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
@@ -28,7 +53,7 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const foundUser = user[0]
+        const foundUser = user[0]!
         const isValid = await bcrypt.compare(credentials.password, foundUser.passwordHash)
 
         if (!isValid) {
@@ -56,19 +81,22 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = (user as any).role
-        token.clinicId = (user as any).clinicId
-        token.clinicName = (user as any).clinicName
+        const authUser = user as AuthUser
+        token.id = authUser.id
+        token.role = authUser.role
+        token.clinicId = authUser.clinicId
+        token.clinicName = authUser.clinicName
+        token.email = authUser.email
+        token.name = authUser.name
       }
       return token
     },
-    async session({ session, token }) {
+    async session({ session, token }): Promise<Session> {
       if (session.user) {
-        (session.user as any).id = token.id
-        ;(session.user as any).role = token.role
-        ;(session.user as any).clinicId = token.clinicId
-        ;(session.user as any).clinicName = token.clinicName
+        session.user.id = token.id as string
+        session.user.role = token.role as string
+        session.user.clinicId = token.clinicId as string
+        session.user.clinicName = token.clinicName as string
       }
       return session
     },

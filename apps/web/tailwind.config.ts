@@ -1,6 +1,6 @@
-import { type Config } from "tailwindcss"
+import { Config } from "tailwindcss"
 
-export default Config({
+export default {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
@@ -84,4 +84,4 @@ export default Config({
     },
   },
   plugins: [],
-}) satisfies Config
+} satisfies Config

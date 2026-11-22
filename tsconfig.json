@@ -5,6 +5,24 @@
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./apps/web/src/*"],
+      "@lib/*": ["./apps/web/src/lib/*"],
+      "@ui/*": ["./packages/ui/src/*"],
+      "@db/*": ["./packages/db/src/*"]
+    }
+  },
+  "include": [
+    "apps/**/*",
+    "packages/**/*",
+    "scripts/**/*",
+    "apps/web/next-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "apps/web/.next"
+  ]
 }

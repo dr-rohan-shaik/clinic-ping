@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { appointments, patients, cashEntries, clinics } from '@/lib/db/schema'
-import { eq, and, gte, lt, sql, sum } from 'drizzle-orm'
+import { appointments, patients, cashEntries } from '@/lib/db/schema'
+import { eq, and, gte, lt, sql, sum, count } from 'drizzle-orm'
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const clinicId = session.user.clinicId
+    const clinicId = session.user.clinicId as string
     const now = new Date()
     const todayStart = startOfDay(now)
     const todayEnd = endOfDay(now)
@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
 
     // Today's appointments
-    const todayAppointmentsResult = await db
-      .select({ count: sql<number>`count(*)` })
+    const todayAppointments = await db
+      .select({ count: count() })
       .from(appointments)
       .where(
         and(
@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
       )
 
     // This week's appointments
-    const thisWeekAppointmentsResult = await db
-      .select({ count: sql<number>`count(*)` })
+    const thisWeekAppointments = await db
+      .select({ count: count() })
       .from(appointments)
       .where(
         and(
@@ -46,30 +46,34 @@ export async function GET(request: NextRequest) {
       )
 
     // Total patients
-    const totalPatientsResult = await db
-      .select({ count: sql<number>`count(*)` })
+    const totalPatients = await db
+      .select({ count: count() })
       .from(patients)
       .where(eq(patients.clinicId, clinicId))
 
     // Cash balance (inflow - outflow)
-    const cashResult = await db
+    const inflowResult = await db
       .select({
-        inflow: sum(cashEntries.amountPaise),
-        outflow: sum(cashEntries.amountPaise),
+        total: sum(sql<number>`COALESCE(SUM(CASE WHEN cash_entries.type = 'inflow' THEN cash_entries.amount_paise ELSE 0 END), 0)`)
       })
       .from(cashEntries)
       .where(eq(cashEntries.clinicId, clinicId))
 
-    const todayAppointments = Number(todayAppointmentsResult[0]?.count || 0)
-    const thisWeekAppointments = Number(thisWeekAppointmentsResult[0]?.count || 0)
-    const totalPatients = Number(totalPatientsResult[0]?.count || 0)
-    const cashBalance = Number((cashResult[0]?.inflow || 0) - (cashResult[0]?.outflow || 0))
+    const outflowResult = await db
+      .select({
+        total: sum(sql<number>`COALESCE(SUM(CASE WHEN cash_entries.type = 'outflow' THEN cash_entries.amount_paise ELSE 0 END), 0)`)
+      })
+      .from(cashEntries)
+      .where(eq(cashEntries.clinicId, clinicId))
+
+    const inflow = Number(inflowResult[0]?.total ?? 0)
+    const outflow = Number(outflowResult[0]?.total ?? 0)
 
     return NextResponse.json({
-      todayAppointments,
-      thisWeekAppointments,
-      totalPatients,
-      cashBalance,
+      todayAppointments: todayAppointments[0]?.count ?? 0,
+      thisWeekAppointments: thisWeekAppointments[0]?.count ?? 0,
+      totalPatients: totalPatients[0]?.count ?? 0,
+      cashBalance: inflow - outflow,
     })
   } catch (error) {
     console.error('Dashboard stats error:', error)

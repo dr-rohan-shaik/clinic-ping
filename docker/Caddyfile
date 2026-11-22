@@ -39,8 +39,18 @@ webhook.clinic-ping.local {
     }
 }
 
-# n8n editor (optional, restrict in production)
+# n8n editor - accessible via main domain
 n8n-edit.clinic-ping.local {
     reverse_proxy n8n:5678
     encode gzip
+}
+
+# pgAdmin - accessible via main domain with authentication
+pgadmin.clinic-ping.local {
+    reverse_proxy pgadmin:80
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+    }
 }
