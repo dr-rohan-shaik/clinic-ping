@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { db } from '@/lib/db'
+import { db } from '@/lib/db.server'
 import { appointments, patients, cashEntries } from '@/lib/db/schema'
 import { eq, and, gte, lt, sql, sum, count } from 'drizzle-orm'
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns'
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {

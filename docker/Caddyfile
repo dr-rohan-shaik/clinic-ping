@@ -19,7 +19,7 @@ clinic-ping.local {
             roll_keep_for 720h
         }
     }
-    errors {
+    log {
         output file /var/log/caddy/error.log {
             roll_size 1MiB
             roll_keep 5

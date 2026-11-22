@@ -4,6 +4,7 @@ const nextConfig = {
   output: 'standalone',
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    serverComponentsExternalPackages: ['postgres', 'drizzle-orm'],
   },
   images: {
     domains: ['localhost'],
@@ -19,6 +20,25 @@ const nextConfig = {
         destination: 'http://localhost:5050/:path*',
       },
     ]
+  },
+  webpack: (config, { isServer, webpack }) => {
+    // Completely exclude postgres from client-side bundles
+    if (!isServer) {
+      config.resolve.alias = config.resolve.alias || {};
+      config.resolve.alias['postgres'] = false;
+      config.resolve.alias['drizzle-orm/postgres-js'] = false;
+
+      config.plugins = config.plugins || [];
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^postgres$/,
+        }),
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^drizzle-orm\/postgres-js$/,
+        })
+      );
+    }
+    return config;
   },
 }
 

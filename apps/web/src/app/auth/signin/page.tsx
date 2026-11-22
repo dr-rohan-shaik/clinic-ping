@@ -1,15 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function SignInPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
-  const error = searchParams.get('error')
+  const [callbackUrl, setCallbackUrl] = useState('/dashboard')
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Use a ref to track if we've already processed the URL
+    let processed = false
+    const processUrl = () => {
+      if (processed) return
+      processed = true
+      const params = new URLSearchParams(window.location.search)
+      const cb = params.get('callbackUrl')
+      if (cb) setCallbackUrl(cb)
+      const err = params.get('error')
+      if (err) setError(err)
+    }
+    processUrl()
+  }, [])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
