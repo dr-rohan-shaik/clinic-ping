@@ -1,0 +1,46 @@
+# ClinicPing Caddy Configuration
+# HTTPS with automatic Let's Encrypt certificates
+
+# Main application
+clinic-ping.local {
+    reverse_proxy web:3000
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10MiB
+            roll_keep 10
+            roll_keep_for 720h
+        }
+    }
+    errors {
+        output file /var/log/caddy/error.log {
+            roll_size 1MiB
+            roll_keep 5
+            roll_keep_for 168h
+        }
+    }
+}
+
+# n8n webhook endpoint for WhatsApp bot
+webhook.clinic-ping.local {
+    reverse_proxy n8n:5678
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+}
+
+# n8n editor (optional, restrict in production)
+n8n-edit.clinic-ping.local {
+    reverse_proxy n8n:5678
+    encode gzip
+}

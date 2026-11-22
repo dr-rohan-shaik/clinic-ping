@@ -1,0 +1,186 @@
+# ClinicPing - Multi-Clinic SaaS Stack
+# Usage: docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+
+version: '3.9'
+
+services:
+  # ============================================
+  # Database
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: clinicping-postgres
+    environment:
+      POSTGRES_USER: clinicping
+      POSTGRES_PASSWORD: clinicping
+      POSTGRES_DB: clinicping
+      POSTGRES_INITDB_ARGS: --encoding=UTF-8 --locale=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinicping -d clinicping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - clinicping-network
+
+  # ============================================
+  # Next.js Application
+  # ============================================
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    container_name: clinicping-web
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs/web:/app/logs
+    restart: unless-stopped
+    networks:
+      - clinicping-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # n8n - Workflow Automation
+  # ============================================
+  n8n:
+    image: n8nio/n8n:1.42.0
+    container_name: clinicping-n8n
+    env_file:
+      - ../.env
+    environment:
+      N8N_HOST: $N8N_HOST
+      N8N_PORT: $N8N_PORT
+      N8N_PROTOCOL: $N8N_PROTOCOL
+      N8N_BASIC_AUTH_ACTIVE: $N8N_BASIC_AUTH_ACTIVE
+      N8N_ENCRYPTION_KEY: $N8N_ENCRYPTION_KEY
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: clinicping
+      DB_POSTGRESDB_USER: clinicping
+      DB_POSTGRESDB_PASSWORD: clinicping
+      GENERIC_TIMEZONE: Asia/Kolkata
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n-workflows:/home/node/.n8n/workflows
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - clinicping-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # Chatwoot - WhatsApp Inbox
+  # ============================================
+  # Uncomment when Chatwoot is needed
+  # chatwoot:
+  #   image: chatwoot/chatwoot:latest
+  #   container_name: clinicping-chatwoot
+  #   env_file:
+  #     - ../.env
+  #   environment:
+  #     DATABASE_URL: postgresql://clinicping:clinicping@postgres:5432/clinicping?schema=public
+  #     ANGLE_PORT: 3001
+  #     RAILS_ENV: production
+  #     ENABLE_ACCOUNT_LOCATIONS: "true"
+  #   ports:
+  #     - "3001:3001"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - clinicping-network
+
+  # ============================================
+  # Caddy - HTTPS with Let's Encrypt
+  # ============================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: clinicping-caddy
+    env_file:
+      - ../.env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+    networks:
+      - clinicping-network
+
+  # ============================================
+  # pgAdmin (Optional - for debugging)
+  # ============================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: clinicping-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@clinicping.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - clinicping-network
+
+  # ============================================
+  # Watchtower (Auto-update containers)
+  # ============================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: clinicping-watchtower
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_POLLING_INTERVAL: "3600"
+      WATCHTOWER_LABEL_ENABLE: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - clinicping-network
+
+volumes:
+  postgres_data:
+  n8n_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  clinicping-network:
+    driver: bridge
