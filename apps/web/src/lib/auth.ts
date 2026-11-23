@@ -1,7 +1,7 @@
 import { NextAuthOptions, Session } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { db } from '@/lib/db.server'
-import { users, clinics } from '@/lib/db/schema'
+import { db } from '@/lib/db'
+import { users, clinics } from '@clinicping/db/schema'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 

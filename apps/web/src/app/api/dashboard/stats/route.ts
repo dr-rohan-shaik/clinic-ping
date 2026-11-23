@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { db } from '@/lib/db.server'
-import { appointments, patients, cashEntries } from '@/lib/db/schema'
+import { db } from '@/lib/db'
+import { appointments, patients, cashEntries } from '@clinicping/db/schema'
 import { eq, and, gte, lt, sql, sum, count } from 'drizzle-orm'
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns'
 
