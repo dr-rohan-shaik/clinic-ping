@@ -2,29 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function SignInPage() {
   const router = useRouter()
-  const [callbackUrl, setCallbackUrl] = useState('/dashboard')
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Use a ref to track if we've already processed the URL
-    let processed = false
-    const processUrl = () => {
-      if (processed) return
-      processed = true
-      const params = new URLSearchParams(window.location.search)
-      const cb = params.get('callbackUrl')
-      if (cb) setCallbackUrl(cb)
-      const err = params.get('error')
-      if (err) setError(err)
-    }
-    processUrl()
-  }, [])
-
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const error = searchParams.get('error')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -130,7 +115,7 @@ export default function SignInPage() {
 
         <div className="text-center text-sm text-gray-600 dark:text-gray-400">
           <p>Demo credentials:</p>
-          <p className="font-mono text-xs mt-1">admin@demo.clinic / demo12345</p>
+          <p className="font-mono text-xs mt-1">admin@demo.clinic / dev-password-change-me</p>
         </div>
       </div>
     </div>

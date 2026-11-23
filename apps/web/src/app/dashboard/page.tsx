@@ -1,13 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  CreditCard,
+  MessageSquare,
+  AlertCircle,
+  TrendingUp,
+  LogOut,
+} from 'lucide-react'
+
+interface Stats {
+  todayAppointments: number
+  thisWeekAppointments: number
+  totalPatients: number
+  cashBalance: number
+}
 
 export default function DashboardPage() {
-  const { status } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     todayAppointments: 0,
     thisWeekAppointments: 0,
     totalPatients: 0,
@@ -35,102 +53,193 @@ export default function DashboardPage() {
     fetchStats()
   }, [])
 
-  if (status === 'loading') return null
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></div>
+      </div>
+    )
+  }
+
+  if (status === 'unauthenticated') return null
+
+  const formatCurrency = (paise: number) => {
+    const rupees = paise / 100
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(rupees)
+  }
+
+  const clinicName = session.user?.clinicName || 'Your Clinic'
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-[#FFEFE6] rounded-2xl p-6 relative overflow-hidden border border-[#FFDEC9]">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back! 👋
-        </h1>
-        <p className="text-gray-600 text-sm mt-1">
-          Here's what's happening in your clinic today.
-        </p>
-      </div>
-
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Primary Accent Card */}
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 text-white shadow-sm flex flex-col justify-between">
-          <div>
-            <span className="text-xs font-medium text-orange-100 uppercase tracking-wider">Total Patients</span>
-            <div className="text-3xl font-bold mt-2">{stats.totalPatients}</div>
-          </div>
-          <div className="text-xs text-orange-100 mt-4 flex items-center gap-1">
-            <span>↑ 5</span>
-            <span>Increased from last month</span>
-          </div>
-        </div>
-
-        {/* Secondary Cards */}
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div>
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Today's Appointments</span>
-            <div className="text-3xl font-bold text-gray-900 mt-2">{stats.todayAppointments}</div>
-          </div>
-          <div className="text-xs text-gray-500 mt-4 flex items-center gap-1">
-            <span>↑ 6</span>
-            <span>Increased from last month</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div>
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">This Week</span>
-            <div className="text-3xl font-bold text-gray-900 mt-2">{stats.thisWeekAppointments}</div>
-          </div>
-          <div className="text-xs text-gray-500 mt-4 flex items-center gap-1">
-            <span>↑ 2</span>
-            <span>Increased from last month</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div>
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Cash Balance</span>
-            <div className="text-3xl font-bold text-gray-900 mt-2">
-              ₹{(stats.cashBalance / 100).toLocaleString('en-IN')}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-orange-600 rounded-lg" />
+                <span className="font-bold text-xl text-gray-900 dark:text-white">ClinicPing</span>
+              </Link>
+              <span className="hidden sm:block text-sm text-gray-500 dark:text-gray-400">{clinicName}</span>
             </div>
-          </div>
-          <div className="text-xs text-gray-500 mt-4 flex items-center gap-1">
-            <span>↑ 3</span>
-            <span>Increased from last month</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Split Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left Column: Latest Conversations */}
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-bold text-gray-900">Latest Conversations</h2>
-            <button className="text-xs font-medium text-gray-500 hover:text-gray-900">View All &gt;</button>
-          </div>
-          <div className="space-y-3">
-            {/* Mock Item */}
-            <div className="p-3 border border-gray-100 rounded-lg flex justify-between items-center bg-gray-50">
-              <div>
-                <div className="font-semibold text-sm">919876543210</div>
-                <div className="text-xs text-gray-500 mt-0.5">Hello, I would like to book an appointment.</div>
+            <div className="flex items-center gap-4">
+              <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <MessageSquare className="w-5 h-5" />
+              </button>
+              <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <AlertCircle className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2 pl-4 border-l border-gray-200 dark:border-gray-700">
+                <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                    {session.user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{session.user?.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{session.user?.role}</p>
+                </div>
               </div>
-              <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Active</span>
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Right Column: Human Handoff */}
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-[200px] text-center">
-          <div className="w-10 h-10 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-2">
-            👤
-          </div>
-          <div className="font-semibold text-sm text-gray-900">No handoff requests</div>
-          <div className="text-xs text-gray-500 mt-1 max-w-[250px]">
-            Conversations requiring human attention will appear here.
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Banner */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 md:p-8 text-white mb-8 relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10" />
+          <div className="relative z-10">
+            <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {session.user?.name?.split(' ')[0] || 'there'}! 👋</h1>
+            <p className="mt-2 text-orange-100 max-w-2xl">Here's what's happening at <span className="font-medium">{clinicName}</span> today.</p>
           </div>
         </div>
-      </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-100 text-sm font-medium uppercase tracking-wider">Total Patients</p>
+                <p className="text-3xl md:text-4xl font-bold mt-2">{stats.totalPatients}</p>
+              </div>
+              <Users className="w-12 h-12 text-orange-200" />
+            </div>
+            <p className="mt-4 text-xs text-orange-100 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> 5% from last month
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium uppercase tracking-wider">Today's Appointments</p>
+                <p className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2">{stats.todayAppointments}</p>
+              </div>
+              <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+            </div>
+            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> 6% from last month
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium uppercase tracking-wider">This Week</p>
+                <p className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2">{stats.thisWeekAppointments}</p>
+              </div>
+              <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+            </div>
+            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> 2% from last month
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium uppercase tracking-wider">Cash Balance</p>
+                <p className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2">{formatCurrency(stats.cashBalance)}</p>
+              </div>
+              <CreditCard className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+            </div>
+            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> 3% from last month
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Actions & Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Quick Actions */}
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+              <div className="space-y-3">
+                <Link href="/appointments/new" className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <span className="font-medium text-gray-900 dark:text-white">New Appointment</span>
+                </Link>
+                <Link href="/patients/new" className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                    <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="font-medium text-gray-900 dark:text-white">Add Patient</span>
+                </Link>
+                <Link href="/cashbook/new" className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="font-medium text-gray-900 dark:text-white">Log Expense</span>
+                </Link>
+                <Link href="/conversations" className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="font-medium text-gray-900 dark:text-white">Messages</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Today's Appointments</h2>
+                <Link href="/appointments" className="text-sm text-orange-600 dark:text-orange-400 hover:underline">View all</Link>
+              </div>
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  No appointments scheduled for today.
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Conversations</h2>
+                <Link href="/conversations" className="text-sm text-orange-600 dark:text-orange-400 hover:underline">View all</Link>
+              </div>
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  No recent conversations.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }
