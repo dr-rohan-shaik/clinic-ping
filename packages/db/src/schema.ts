@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean, integer, jsonb, foreignKey, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, timestamp, text, integer, jsonb, index } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
@@ -73,7 +73,6 @@ export const users = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     clinicId: uuid('clinic_id')
       .notNull()
-      .references(() => clinics.id, { onDelete: 'restrict' })
       .references(() => clinics.id, { onDelete: 'restrict' }),
     name: varchar('name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).notNull().unique(),

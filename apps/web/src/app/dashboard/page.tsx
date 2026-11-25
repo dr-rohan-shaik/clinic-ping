@@ -5,14 +5,12 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
-  LayoutDashboard,
   Calendar,
   Users,
   CreditCard,
   MessageSquare,
   AlertCircle,
   TrendingUp,
-  LogOut,
 } from 'lucide-react'
 
 interface Stats {
@@ -61,7 +59,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (status === 'unauthenticated') return null
+  if (status === 'unauthenticated' || !session) return null
 
   const formatCurrency = (paise: number) => {
     const rupees = paise / 100
@@ -73,7 +71,12 @@ export default function DashboardPage() {
     }).format(rupees)
   }
 
-  const clinicName = session.user?.clinicName || 'Your Clinic'
+  const user = session.user
+  const clinicName = user?.clinicName || 'Your Clinic'
+  const userInitial = user?.name?.charAt(0).toUpperCase() || 'U'
+  const userName = user?.name || 'User'
+  const userRole = user?.role || 'receptionist'
+  const firstName = userName.split(' ')[0] || 'there'
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -98,12 +101,12 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2 pl-4 border-l border-gray-200 dark:border-gray-700">
                 <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                    {session.user?.name?.charAt(0).toUpperCase() || 'U'}
+                    {userInitial}
                   </span>
                 </div>
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{session.user?.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{session.user?.role}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{userName}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{userRole}</p>
                 </div>
               </div>
             </div>
@@ -117,7 +120,7 @@ export default function DashboardPage() {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 md:p-8 text-white mb-8 relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10" />
           <div className="relative z-10">
-            <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {session.user?.name?.split(' ')[0] || 'there'}! 👋</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {firstName}! 👋</h1>
             <p className="mt-2 text-orange-100 max-w-2xl">Here's what's happening at <span className="font-medium">{clinicName}</span> today.</p>
           </div>
         </div>

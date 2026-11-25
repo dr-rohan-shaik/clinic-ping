@@ -12,7 +12,8 @@
       "@/*": ["./apps/web/src/*"],
       "@lib/*": ["./apps/web/src/lib/*"],
       "@ui/*": ["./packages/ui/src/*"],
-      "@db/*": ["./packages/db/src/*"]
+      "@db/*": ["./packages/db/src/*"],
+      "@clinicping/db/*": ["./packages/db/src/*"]
     }
   },
   "include": [

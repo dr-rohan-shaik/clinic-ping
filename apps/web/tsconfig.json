@@ -40,6 +40,9 @@
       ],
       "@types/*": [
         "./src/types/*"
+      ],
+      "@clinicping/db/*": [
+        "../../packages/db/src/*"
       ]
     },
     "allowJs": true,

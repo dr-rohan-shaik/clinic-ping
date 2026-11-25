@@ -4,41 +4,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%; /* #FAFAFA */
-    --foreground: 222 47% 11%; /* #111827 */
+    --background: 0 0% 95%; /* #F4F4F4 */
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-    --border: 214 32% 91%; /* #E5E7EB */
-    --muted: 215 16% 47%; /* #6B7280 */
-    --primary: 24 98% 53%; /* #F97316 */
+    --border: 214 32% 91%;
+    --muted: 215 16% 47%;
+    --primary: 24 98% 53%; /* Brand Orange */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-  }
-
-  .dark {
-    --background: 222 47% 11%; /* #111827 */
-    --foreground: 210 40% 98%;
-    --card: 222 47% 15%;
-    --card-foreground: 210 40% 98%;
-    --border: 217 20% 25%;
-    --muted: 217 20% 65%;
-    --primary: 24 91% 53%; /* #EA580C */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 222 47% 15%;
-    --secondary-foreground: 210 40% 98%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
   }
 
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#F4F4F4] text-gray-900;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
   }
 }
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 export default function PgAdminPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
     const [isRedirecting, setIsRedirecting] = useState(true);
     useEffect(() => {
